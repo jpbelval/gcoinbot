@@ -7,7 +7,7 @@ import time
 
 msg_id = None
 bot = commands.Bot(command_prefix='g ')
-token = 'NjMwMTQ5MDU3OTk3NzAxMTIz.XoPnlw.k0CNwNsOr7Xuez1mXB-VWqJunvI'
+token = 'token'
 conn = sqlite3.connect('coin.db')
 c = conn.cursor()
 
