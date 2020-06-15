@@ -3,9 +3,11 @@
 
 **GCoinBot** is a basic discord bot that integrates a form of economy to any discord server.
 It includes:
-* Local database integration
+* Local database integration using SQLite3
 * Transaction system (give)
 * Balance command
 * Gambling (A basic integration of gamble based on a 1/3 chance of doubling your bet)
+* Daily rewards
 
-Can be used with your own bot.
+Can be used to add the functionality to an existing bot.
+It uses Python 3.6 and discordpy.
