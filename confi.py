@@ -1,3 +1,4 @@
+#!/home/jp/DiscordBot/gcoinbot/venv/bin/python3.7
 import discord
 from discord.ext import commands
 import sqlite3
@@ -7,8 +8,8 @@ import time
 
 msg_id = None
 bot = commands.Bot(command_prefix='g ')
-token = 'NjMwMTQ5MDU3OTk3NzAxMTIz.XoPnlw.k0CNwNsOr7Xuez1mXB-VWqJunvI'
-conn = sqlite3.connect('coin.db')
+token = 'NjMwMTQ5MDU3OTk3NzAxMTIz.XrTNAw.zbmJgTDTX6rpMt-fg47qX0iiVQ8'
+conn = sqlite3.connect('/home/jp/DiscordBot/gcoinbot/coin.db')
 c = conn.cursor()
 
 def get_balance(user):
@@ -78,11 +79,15 @@ async def give(ctx, receiver, amount):
                         await ctx.channel.send("Something went wrong!")
 
 @bot.command()
-async def balance(ctx):
-    sender = str(ctx.author)
+async def balance(ctx, *person):
+    if len(person) == 0:
+        sender = str(ctx.author)
+    else:
+        other = ""
+        sender = other.join(person)
     result = get_balance(sender)
     if result is False:
-        await ctx.channel.send("Tu ne possède pas de compte utilise: g create")
+        await ctx.channel.send("Ce compte n'existe pas: g create")
     else:
         embed = discord.Embed(title='Balance :moneybag:', color=0x15a227)
         embed.add_field(name=sender, value=str(result) + " GCoins")
@@ -137,7 +142,7 @@ async def gamble(ctx, amount):
                 return ctx.author == user and str(reaction.emoji) in ['1️⃣', '2️⃣', '3️⃣']
             reaction = await bot.wait_for('reaction_add', timeout=15.0, check=check)
             guess = reaction[0]
-            await ctx.channel.send("You responded with {}".format(guess))
+            await ctx.channel.send("Tu as répondu {}.".format(guess))
             if guess.emoji == '1️⃣':
                 choice = 1
             elif guess.emoji == '2️⃣':
@@ -159,6 +164,7 @@ async def gamble(ctx, amount):
                 conn.commit()
                 embed = discord.Embed(title=':x:Oups!:x:', color=0xff0000)
                 embed.add_field(name="Résultat", value="Tu as perdu " + str(amount) + " GCoins.")
+                embed.add_field(name="Réponse", value="La réponse était " + str(randomizer))
                 await ctx.channel.send(embed=embed)
             
 bot.run(token)
