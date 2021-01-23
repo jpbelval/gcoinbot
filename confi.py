@@ -8,7 +8,7 @@ import time
 
 msg_id = None
 bot = commands.Bot(command_prefix='g ')
-token = 'NjMwMTQ5MDU3OTk3NzAxMTIz.XrTNAw.zbmJgTDTX6rpMt-fg47qX0iiVQ8'
+token = '*'
 conn = sqlite3.connect('/home/jp/DiscordBot/gcoinbot/coin.db')
 c = conn.cursor()
 
