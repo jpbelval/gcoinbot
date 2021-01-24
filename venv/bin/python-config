@@ -1,4 +1,4 @@
-#!/home/jay/confinés/venv/bin/python
+#!/home/jp/DiscordBot/gcoinbot/venv/bin/python
 
 import sys
 import getopt
