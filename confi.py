@@ -5,16 +5,16 @@ import sqlite3
 import datetime
 import random
 import time
+import json
+
+with open('config.json') as config_file:
+    data = json.load(config_file)
+
+token = data['token']
 
 msg_id = None
 bot = commands.Bot(command_prefix='g ')
-<<<<<<< HEAD
-token = 'token'
 conn = sqlite3.connect('coin.db')
-=======
-token = '*'
-conn = sqlite3.connect('/home/jp/DiscordBot/gcoinbot/coin.db')
->>>>>>> 1fe8c047743f0891c02ad61d44864d38d4ade6f6
 c = conn.cursor()
 
 def get_balance(user):
@@ -171,5 +171,38 @@ async def gamble(ctx, amount):
                 embed.add_field(name="Résultat", value="Tu as perdu " + str(amount) + " GCoins.")
                 embed.add_field(name="Réponse", value="La réponse était " + str(randomizer))
                 await ctx.channel.send(embed=embed)
-            
+
+@bot.command()
+async def leaderboard(ctx):
+    c.execute("SELECT * FROM Clients ORDER BY balance DESC LIMIT 5")
+    results = c.fetchall() 
+    fembed = discord.Embed(title=":fireworks:LEADERBOARD:fireworks:")
+    count = 0
+    authorInList = False
+    for i in results:
+        rank = count+1
+        print(results[count][1])
+        print(ctx.author)
+        if results[count][1] == ctx.author:
+            authorInList = True
+        if count == 0:
+            fembed.add_field(name=":first_place:" + results[count][1], value=results[count][2])
+        elif count == 1:
+            fembed.add_field(name=":second_place:" + results[count][1], value=results[count][2])
+        elif count == 2:
+            fembed.add_field(name=":third_place:" + results[count][1], value=results[count][2])
+        else:
+            fembed.add_field(name=str(rank) + ". " + results[count][1], value=results[count][2])
+        fembed.add_field(name="\u200B", value="\u200B")
+        fembed.add_field(name="\u200B", value="\u200B")
+        count+=1
+    if authorInList == False:
+        c.execute("SELECT * FROM (SELECT ROW_NUMBER () OVER (ORDER BY balance DESC) RowNum, client_name, balance FROM Clients) WHERE client_name=?", (str(ctx.author),))
+        resulttemp = c.fetchone()
+        print(resulttemp)
+        fembed.add_field(name="...", value="\u200B")
+        fembed.add_field(name="\u200B", value="\u200B")
+        fembed.add_field(name="\u200B", value="\u200B")
+        fembed.add_field(name=str(resulttemp[0]) + ". " + str(ctx.author), value=str(resulttemp[2]))
+    msg = await ctx.channel.send(embed=fembed)
 bot.run(token)
