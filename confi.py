@@ -1,4 +1,4 @@
-#!/home/jp/DiscordBot/gcoinbot/venv/bin/python3.7
+
 import discord
 from discord.ext import commands
 import sqlite3
