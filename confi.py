@@ -205,4 +205,74 @@ async def leaderboard(ctx):
         fembed.add_field(name="\u200B", value="\u200B")
         fembed.add_field(name=str(resulttemp[0]) + ". " + str(ctx.author), value=str(resulttemp[2]))
     msg = await ctx.channel.send(embed=fembed)
+
+    @bot.command()
+    async def steal(ctx, receiver, amount):
+        sender = str(ctx.author)
+        amount = int(amount)
+        receiver = str(receiver)
+        if amount < 1:
+            await ctx.channel.send("Tu dois donner un nombre plus grand que 0")
+        else:
+            balance = get_balance(sender)
+            if balance is False:
+                await ctx.channel.send("Tu ne possède pas de compte utilise: g create")
+            else:
+                rbalance = get_balance(receiver)
+                if rbalance is False:
+                    await ctx.channel.send("Il n'existe pas de compte à ce nom: Username#0000")
+                else:
+                    if balance < amount:
+                        await ctx.channel.send("Tu n'as pas que " + str(balance) + ' GCoin')
+                    else:
+                        if rbalance < amount:
+                            await ctx.channel.send("La personne que tu tentes de voler n'a que " + str(rbalance) + "GCoin")
+                        newbalance = balance - amount
+                        snewbalance = balance + amount
+                        rnewbalance = (amount/2) + rbalance
+                        vnewbalance = rbalance - amount
+                        receivercoin = set_balance(vnewbalance, receiver)
+                        sendercoin = set_balance(newbalance, sender)
+                        if receivercoin is True and sendercoin is True:
+                            fembed = discord.Embed(title=":dollar: Gamble :dollar:")
+                        fembed.add_field(name="Instructions", value="Tu as une chance sur quatre de voler ta mise.\nChoisis un numéro de 1 à 4")
+                        msg = await ctx.channel.send(embed=fembed)
+                        await msg.add_reaction("1️⃣")
+                        await msg.add_reaction("2️⃣")
+                        await msg.add_reaction("3️⃣")
+                        await msg.add_reaction("4️⃣")
+                        def check(reaction,user):
+                            return ctx.author == user and str(reaction.emoji) in ['1️⃣', '2️⃣', '3️⃣', '4️⃣']
+                        reaction = await bot.wait_for('reaction_add', timeout=15.0, check=check)
+                        guess = reaction[0]
+                        await ctx.channel.send("Tu as répondu {}.".format(guess))
+                        if guess.emoji == '1️⃣':
+                            choice = 1
+                        elif guess.emoji == '2️⃣':
+                            choice = 2
+                        elif guess.emoji == '3️⃣':
+                            choice = 3
+                        elif guess.emoji == '4️⃣':
+                            choice = 4
+                        randomizer = random.randint(1,4)
+                        print(str(choice) + " "+ str(randomizer))
+                        if choice == randomizer:
+                            newbalance = int(balance) + int(amount)
+                            vnewbalance = int(rbalance) - int(amount)
+                            c.execute("UPDATE Clients SET balance=? WHERE client_name=?", (newbalance,sender))
+                            c.execute("UPDATE Clients SET balance=? WHERE client_name=?", (vnewbalance,receiver))
+                            conn.commit()
+                            embed = discord.Embed(title=':dollar:TU AS RÉUSSI TON VOL!:dollar:', color=0x00ff00)
+                            embed.add_field(name="Résultat", value="Tu as volé " + str(amount) + " GCoins à " + receiver + " !")
+                            await ctx.channel.send(embed=embed)
+                        else:
+                            newbalance = int(balance) - int(amount)
+                            vnewbalance = int(rbalance) + int(amount/2)
+                            c.execute("UPDATE Clients SET balance=? WHERE client_name=?", (newbalance,sender))
+                            c.execute("UPDATE Clients SET balance=? WHERE client_name=?", (vnewbalance,receiver))
+                            conn.commit()
+                            embed = discord.Embed(title=':x:Oups!:x:', color=0xff0000)
+                            embed.add_field(name="Résultat", value="Tu t'es fait attrapé, tu devras payer" + str(amount/2) + " GCoins aux assurances et" +str(amount/2) + " GCoin à la victime.")
+                            embed.add_field(name="Réponse", value="La réponse était " + str(randomizer))
+                            await ctx.channel.send(embed=embed)
 bot.run(token)
