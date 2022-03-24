@@ -123,9 +123,13 @@ async def daily(ctx):
             c.execute("UPDATE Clients SET last_daily=? WHERE client_name=?", (last_daily, sender))
             c.execute("UPDATE Clients SET balance=? WHERE client_name=?", (newbalance, sender))
             conn.commit()
-            await ctx.channel.send(sender + ", tu as maintenant: " + str(newbalance) + " GCoins")
+            embed = discord.Embed(title='+' + price + ' :coin:', color=0x15a227)
+            embed.add_field(name=sender, value=str("Tu as maintenant ") + str(newbalance) + " GCoins")
+            await ctx.channel.send(embed=embed)
         else:
-            await ctx.channel.send("Tu as déjà eu tes coins pour la journée, reviens demain!")
+            embed = discord.Embed(title=':x:!', color=0xff0000)
+            embed.add_field(name="Erreur", value="Tu as déjà eu tes coins pour la journée, reviens demain !")
+            await ctx.channel.send(embed=embed)
 
 @bot.command()
 async def gamble(ctx, amount):
