@@ -141,6 +141,9 @@ async def gamble(ctx, amount):
         if balance < int(amount):
             await ctx.channel.send('Pas assez de GCoin, tu as ' + str(balance) + ' GCoin')
         else:
+            newbalance = int(balance) - int(amount)
+            c.execute("UPDATE Clients SET balance=? WHERE client_name=?", (newbalance,sender))
+            conn.commit()
             fembed = discord.Embed(title=":four_leaf_clover: Gamble :four_leaf_clover:")
             fembed.add_field(name="Instructions", value="Tu as une chance sur trois de doubler ta mise.\nChoisis un numéro de 1 à 3")
             msg = await ctx.channel.send(embed=fembed)
@@ -161,16 +164,14 @@ async def gamble(ctx, amount):
             randomizer = random.randint(1,3)
             print(str(choice) + " "+ str(randomizer))
             if choice == randomizer:
-                newbalance = int(balance) + int(amount)
+                balance = get_balance(sender)
+                newbalance = int(balance) + (int(amount) * 2)
                 c.execute("UPDATE Clients SET balance=? WHERE client_name=?", (newbalance,sender))
                 conn.commit()
                 embed = discord.Embed(title=':green_square:NOUS AVONS UN GAGNANT!:green_square:', color=0x00ff00)
                 embed.add_field(name="Résultat", value="Tu as gagné " + str(amount) + " GCoins!")
                 await ctx.channel.send(embed=embed)
             else:
-                newbalance = int(balance) - int(amount)
-                c.execute("UPDATE Clients SET balance=? WHERE client_name=?", (newbalance,sender))
-                conn.commit()
                 embed = discord.Embed(title=':x:Oups!:x:', color=0xff0000)
                 embed.add_field(name="Résultat", value="Tu as perdu " + str(amount) + " GCoins.")
                 embed.add_field(name="Réponse", value="La réponse était " + str(randomizer))
