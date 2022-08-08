@@ -6,6 +6,7 @@ import datetime
 import random
 import time
 import json
+import math
 
 with open('config.json') as config_file:
     data = json.load(config_file)
@@ -16,6 +17,12 @@ msg_id = None
 bot = commands.Bot(command_prefix='g ')
 conn = sqlite3.connect('coin.db')
 c = conn.cursor()
+
+c.execute('''
+          CREATE TABLE IF NOT EXISTS Clients 
+          ([client_name] TEXT PRIMARY KEY, [balance] INTEGER, [last_daily] INTEGER)
+          ''')
+
 
 def get_balance(user):
     try:
@@ -69,7 +76,7 @@ async def give(ctx, receiver, amount):
                 await ctx.channel.send("Il n'existe pas de compte à ce nom: Username#0000")
             else:
                 if balance < amount:
-                    await ctx.channel.send('Pas assez de GCoin, tu as ' + str(balance) + ' GCoin')
+                    await ctx.channel.send('Pas assez de GCoin, tu as ' + str(balance) + ' GCoins')
                 else:
                     newbalance = balance - amount
                     rnewbalance = amount + rbalance
@@ -139,7 +146,7 @@ async def gamble(ctx, amount):
     else:
         balance = get_balance(sender)
         if balance < int(amount):
-            await ctx.channel.send('Pas assez de GCoin, tu as ' + str(balance) + ' GCoin')
+            await ctx.channel.send('Pas assez de GCoin, tu as ' + str(balance) + ' GCoins')
         else:
             newbalance = int(balance) - int(amount)
             c.execute("UPDATE Clients SET balance=? WHERE client_name=?", (newbalance,sender))
@@ -210,4 +217,79 @@ async def leaderboard(ctx):
         fembed.add_field(name="\u200B", value="\u200B")
         fembed.add_field(name=str(resulttemp[0]) + ". " + str(ctx.author), value=str(resulttemp[2]))
     msg = await ctx.channel.send(embed=fembed)
+
+@bot.command()
+async def steal(ctx, receiver, amount):
+    sender = str(ctx.author)
+    amount = int(amount)
+    receiver = str(receiver)
+    if sender == receiver:
+        await ctx.channel.send("Tu ne peux pas te voler toi même")
+    elif receiver == "Assurances":
+        await ctx.channel.send("Tu ne peux pas voler les assurances")
+    elif amount < 1:
+        await ctx.channel.send("Tu dois donner un nombre plus grand que 0")
+    else:
+        balance = get_balance(sender)
+        if balance is False:
+            await ctx.channel.send("Tu ne possède pas de compte utilise: g create")
+        else:
+            rbalance = get_balance(receiver)
+            if rbalance is False:
+                await ctx.channel.send("Il n'existe pas de compte à ce nom: Username#0000")
+            else:
+                if balance < amount:
+                    await ctx.channel.send("Tu n'as que " + str(balance) + ' GCoins')
+                else:
+                    if rbalance < amount:
+                        await ctx.channel.send("La personne que tu tentes de voler n'a que " + str(rbalance) + "GCoins")
+                    newbalance = balance - amount
+                    vnewbalance = rbalance - amount
+                    receivercoin = set_balance(vnewbalance, receiver)
+                    sendercoin = set_balance(newbalance, sender)
+                    if receivercoin is True and sendercoin is True:
+                        fembed = discord.Embed(title=":dollar: Vol :dollar:")
+                    fembed.add_field(name="Instructions", value="Tu as une chance sur quatre de voler la mise.\nChoisis un numéro de 1 à 4")
+                    msg = await ctx.channel.send(embed=fembed)
+                    await msg.add_reaction("1️⃣")
+                    await msg.add_reaction("2️⃣")
+                    await msg.add_reaction("3️⃣")
+                    await msg.add_reaction("4️⃣")
+                    def check(reaction,user):
+                        return ctx.author == user and str(reaction.emoji) in ['1️⃣', '2️⃣', '3️⃣', '4️⃣']
+                    reaction = await bot.wait_for('reaction_add', check=check)
+                    guess = reaction[0]
+                    await ctx.channel.send("Tu as répondu {}.".format(guess))
+                    if guess.emoji == '1️⃣':
+                        choice = 1
+                    elif guess.emoji == '2️⃣':
+                        choice = 2
+                    elif guess.emoji == '3️⃣':
+                        choice = 3
+                    elif guess.emoji == '4️⃣':
+                        choice = 4
+                    randomizer = random.randint(1,4)
+                    print(str(choice) + " "+ str(randomizer))
+                    if choice == randomizer:
+                        newbalance = int(balance) + int(amount)
+                        vnewbalance = int(rbalance) - int(amount)
+                        c.execute("UPDATE Clients SET balance=? WHERE client_name=?", (newbalance,sender))
+                        c.execute("UPDATE Clients SET balance=? WHERE client_name=?", (vnewbalance,receiver))
+                        conn.commit()
+                        embed = discord.Embed(title=':dollar:TU AS RÉUSSI TON VOL!:dollar:', color=0x00ff00)
+                        embed.add_field(name="Résultat", value="Tu as volé " + str(amount) + " GCoins à " + receiver + " !")
+                        await ctx.channel.send(embed=embed)
+                    else:
+                        abalance = get_balance("Assurances")
+                        newbalance = int(balance) - int(amount)
+                        vnewbalance = int(rbalance) + int(math.ceil(amount/2))
+                        anewbalance = int(abalance) + int(math.floor(amount/2))
+                        c.execute("UPDATE Clients SET balance=? WHERE client_name=?", (newbalance,sender))
+                        c.execute("UPDATE Clients SET balance=? WHERE client_name=?", (vnewbalance,receiver))
+                        c.execute("UPDATE Clients SET balance=? WHERE client_name=?", (anewbalance, "Assurances"))
+                        conn.commit()
+                        embed = discord.Embed(title=':x:Oups!:x:', color=0xff0000)
+                        embed.add_field(name="Résultat", value="Tu t'es fait attrapé, tu devras payer " + str(math.floor(amount/2)) + " GCoins aux assurances et " +str(math.ceil(amount/2)) + " GCoins à la victime.")
+                        embed.add_field(name="Réponse", value="La réponse était " + str(randomizer))
+                        await ctx.channel.send(embed=embed)
 bot.run(token)
